@@ -2,133 +2,126 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="情绪色卡">
 <title>情绪色卡</title>
 <style>
-/* Layout: the interface stays neutral so the only colour on the page is the mood itself.
-   Phone: record card on top, month below. Wide: two columns side by side. */
+/* Layout: the month is the page. The calendar grid is the hero; tapping a day opens a
+   bottom sheet with the mood field. The interface stays neutral so the only colour is the mood. */
 :root{
   --bg:#f3f3f6; --surface:#ffffff; --ink:#1b1b23; --muted:#666a79; --line:#dcdce5; --soft:#ebebf1;
-  --on-field:rgba(18,18,28,.78); --handle:#ffffff; --handle-ring:rgba(18,18,28,.55);
+  --on-field:rgba(18,18,28,.78); --handle:#ffffff; --handle-ring:rgba(18,18,28,.55); --scrim:rgba(20,20,30,.45);
   --font-display:"LXGW WenKai TC","Kaiti SC","STKaiti","KaiTi",serif;
   --font-body:"Noto Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#121217; --surface:#1c1c25; --ink:#ececf3; --muted:#9a9cac; --line:#30303d; --soft:#25252f;
+  --bg:#121217; --surface:#1c1c25; --ink:#ececf3; --muted:#9a9cac; --line:#30303d; --soft:#25252f; --scrim:rgba(0,0,0,.6);
   color-scheme:dark;
 }}
 :root[data-theme="dark"]{
-  --bg:#121217; --surface:#1c1c25; --ink:#ececf3; --muted:#9a9cac; --line:#30303d; --soft:#25252f;
+  --bg:#121217; --surface:#1c1c25; --ink:#ececf3; --muted:#9a9cac; --line:#30303d; --soft:#25252f; --scrim:rgba(0,0,0,.6);
   color-scheme:dark;
 }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink)}
-body{font-family:var(--font-body);font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font-body);font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased;padding-top:env(safe-area-inset-top,0px)}
+body.locked{overflow:hidden}
 [hidden]{display:none!important}
-.page{max-width:980px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px;display:flex;flex-direction:column;gap:20px}
-header{display:flex;flex-direction:column;gap:4px}
-h1{font-family:var(--font-display);font-weight:700;font-size:38px;line-height:1.15;margin:0;letter-spacing:.04em}
-h2{font-family:var(--font-display);font-weight:700;font-size:24px;line-height:1.3;margin:0}
-p{margin:0}
-.muted{color:var(--muted);font-size:14px}
-.cols{display:grid;grid-template-columns:1fr;gap:20px;align-items:start}
-@media (min-width:860px){.cols{grid-template-columns:minmax(0,400px) minmax(0,1fr)}}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:16px;min-width:0}
 button{font:inherit;color:inherit}
 button:focus-visible,.pad:focus-visible,summary:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+p{margin:0}
+.muted{color:var(--muted);font-size:14px}
 
-/* record */
+.page{max-width:560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 48px;display:flex;flex-direction:column;gap:18px}
+
+/* top bar: month nav */
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.brand{font-size:13px;color:var(--muted);letter-spacing:.08em}
+.mnav{display:flex;align-items:center;gap:6px}
+h1{font-family:var(--font-display);font-weight:700;font-size:30px;line-height:1.1;margin:0;letter-spacing:.03em;min-width:7.5em;text-align:center}
+.nav{appearance:none;border:1px solid var(--line);background:var(--surface);width:40px;height:40px;border-radius:12px;cursor:pointer;font-size:20px;line-height:1}
+.nav:disabled{opacity:.3;cursor:not-allowed}
+
+/* calendar */
+.cal{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:14px 12px 12px}
+.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.wd{text-align:center;font-size:12px;color:var(--muted);padding-bottom:4px}
+.day{appearance:none;border:1.5px solid transparent;background:none;border-radius:14px;padding:0;cursor:pointer;position:relative;aspect-ratio:1;min-width:0;display:block}
+.day svg{width:100%;height:100%;display:block}
+.day .n{position:absolute;left:7px;top:4px;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;line-height:1.4}
+.day.today{border-color:var(--line)}
+.day.today .n{color:var(--ink);font-weight:700}
+.day.today.empty{border-color:var(--ink)}
+.day:disabled{opacity:.25;cursor:default}
+.banner{background:var(--soft);border-radius:12px;padding:10px 14px;font-size:14px;margin-top:10px}
+.cta{appearance:none;border:0;cursor:pointer;font-weight:700;font-size:17px;min-height:52px;border-radius:14px;padding:0 20px;background:var(--ink);color:var(--bg);width:100%}
+.cta.done{background:var(--soft);color:var(--ink)}
+
+/* portrait */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+h2{font-family:var(--font-display);font-weight:700;font-size:22px;line-height:1.3;margin:0}
+.portrait{border-radius:16px;background:var(--soft);padding:8px}
+.portrait svg{display:block;width:100%;max-width:380px;margin:0 auto;height:auto}
+.portrait text{font-family:var(--font-body);font-size:11px;fill:var(--muted)}
+.sum{font-family:var(--font-display);font-size:19px;line-height:1.5}
+.link{appearance:none;background:none;border:0;padding:0;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:14px;min-height:36px;text-align:left}
+
+/* why */
+details{border-top:1px solid var(--line);padding-top:14px}
+summary{cursor:pointer;font-weight:700}
+.why{display:grid;gap:14px;margin-top:14px}
+.why h3{font-size:15px;margin:0 0 2px}
+.why p{font-size:14px;color:var(--muted)}
+
+/* bottom sheet */
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:20;border:0;padding:0;cursor:default}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:21;background:var(--surface);border-radius:24px 24px 0 0;box-shadow:0 -8px 40px rgba(0,0,0,.25);max-height:calc(100% - 24px);overflow-y:auto;padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px));padding-top:10px;padding-bottom:calc(18px + env(safe-area-inset-bottom,0px))}
+.sheet-in{max-width:440px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.grip{width:40px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 2px}
 .now{display:flex;align-items:center;gap:14px}
-.now svg{flex:none;width:112px;height:112px;display:block}
-.now-text{min-width:0;display:flex;flex-direction:column;gap:2px}
-.word{font-family:var(--font-display);font-weight:700;font-size:34px;line-height:1.2}
+.now svg{flex:none;width:96px;height:96px;display:block}
+.now-text{min-width:0;display:flex;flex-direction:column;gap:2px;flex:1}
+.word{font-family:var(--font-display);font-weight:700;font-size:32px;line-height:1.2}
+.close{appearance:none;border:0;background:var(--soft);width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:18px;line-height:1;align-self:flex-start}
 .pad{position:relative;aspect-ratio:1;max-width:100%;border-radius:18px;overflow:hidden;touch-action:none;cursor:crosshair;user-select:none;-webkit-user-select:none}
 .pad canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .pad .lab{position:absolute;font-size:13px;font-weight:500;color:var(--on-field);pointer-events:none}
 .lab.tl{top:10px;left:12px}.lab.tr{top:10px;right:12px}.lab.bl{bottom:10px;left:12px}.lab.br{bottom:10px;right:12px}
 .handle{position:absolute;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;background:var(--handle);box-shadow:0 0 0 2px var(--handle-ring),0 3px 10px rgba(0,0,0,.3);pointer-events:none}
-.axes{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
-.btn{appearance:none;border:0;cursor:pointer;font-weight:700;font-size:17px;min-height:52px;border-radius:14px;padding:0 20px;background:var(--ink);color:var(--bg);width:100%}
-.btn.done{background:var(--soft);color:var(--ink)}
-.link{appearance:none;background:none;border:0;padding:0;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:14px;min-height:36px}
-.rowlinks{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
-
-/* month */
-.mhead{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.nav{appearance:none;border:1px solid var(--line);background:var(--surface);width:42px;height:42px;border-radius:12px;cursor:pointer;font-size:20px;line-height:1}
-.nav:disabled{opacity:.3;cursor:not-allowed}
-.banner{background:var(--soft);border-radius:12px;padding:10px 14px;font-size:14px}
-.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
-.wd{text-align:center;font-size:12px;color:var(--muted);padding-bottom:2px}
-.day{appearance:none;border:1px solid transparent;background:none;border-radius:12px;padding:2px;cursor:pointer;position:relative;aspect-ratio:1;min-width:0;display:block}
-.day svg{width:100%;height:100%;display:block}
-.day .n{position:absolute;left:5px;top:2px;font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums;line-height:1.4}
-.day.sel{border-color:var(--ink)}
-.day.today .n{color:var(--ink);font-weight:700}
-.day:disabled{opacity:.3;cursor:default}
-.portrait{border-radius:16px;background:var(--soft);padding:8px}
-.portrait svg{display:block;width:100%;max-width:420px;margin:0 auto;height:auto}
-.portrait text{font-family:var(--font-body);font-size:11px;fill:var(--muted)}
-.sum{font-family:var(--font-display);font-size:19px;line-height:1.5}
-
-/* why */
-details{border-top:1px solid var(--line);padding-top:14px}
-summary{cursor:pointer;font-weight:700}
-.why{display:grid;gap:14px;margin-top:14px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
-.why h3{font-size:15px;margin:0 0 2px}
-.why p{font-size:14px;color:var(--muted)}
-@media (prefers-reduced-motion:no-preference){.handle{transition:transform .12s}.pad:active .handle{transform:scale(1.15)}}
+.axes{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:6px}
+.rowlinks{display:flex;justify-content:center}
+@media (prefers-reduced-motion:no-preference){
+  .sheet{animation:up .22s ease-out}
+  @keyframes up{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+  .handle{transition:transform .12s}.pad:active .handle{transform:scale(1.15)}
+}
 </style>
 </head>
 <body>
 <div class="page">
-  <header>
-    <h1>情绪色卡</h1>
-    <p class="muted">不用写字。拖一下，把今天的心情变成一个颜色和形状。</p>
-  </header>
-
-  <div class="cols">
-    <section class="card" aria-labelledby="recTitle">
-      <div class="now">
-        <svg viewBox="0 0 120 120" aria-hidden="true"><path id="bigBlob"></path></svg>
-        <div class="now-text">
-          <span class="muted" id="recTitle"></span>
-          <span class="word" id="word"></span>
-          <span class="muted" id="recState"></span>
-        </div>
-      </div>
-      <div>
-        <div class="pad" id="pad" tabindex="0" role="application" aria-label="情绪场：左右是愉快程度，上下是精力高低。可拖动，也可用方向键调整。">
-          <canvas id="field" width="64" height="64"></canvas>
-          <span class="lab tl">烦躁</span><span class="lab tr">兴奋</span>
-          <span class="lab bl">低落</span><span class="lab br">平静</span>
-          <span class="handle" id="handle"></span>
-        </div>
-        <div class="axes"><span>← 不愉快</span><span>上：有劲 · 下：没劲</span><span>愉快 →</span></div>
-      </div>
-      <button class="btn" id="save"></button>
-      <div class="rowlinks">
-        <button class="link" id="del" hidden>删除这一天</button>
-        <button class="link" id="backToday" hidden>回到今天</button>
-      </div>
-      <p class="muted" id="storeNote" hidden>这个浏览器没法保存数据，记录只在本次打开期间有效。</p>
-    </section>
-
-    <section class="card" aria-labelledby="mTitle">
-      <div class="mhead">
-        <button class="nav" id="prev" aria-label="上个月">‹</button>
-        <h2 id="mTitle"></h2>
-        <button class="nav" id="next" aria-label="下个月">›</button>
-      </div>
-      <div class="banner" id="exBanner" hidden>下面是<strong>示例</strong>，让你先看看一个月会长成什么样。记下第一天后，这里就换成你自己的。</div>
-      <div class="grid" id="grid"></div>
-      <p class="muted">点任意一天可以补记或修改。</p>
-      <div class="portrait" id="portrait"></div>
-      <p class="sum" id="sum"></p>
-      <p class="muted">记录只保存在你这台设备的浏览器里，别人看不到。想留存月度画像，截图即可。</p>
-      <button class="link" id="clear" hidden>清空我的全部记录</button>
-    </section>
+  <div class="top">
+    <button class="nav" id="prev" aria-label="上个月">‹</button>
+    <h1 id="mTitle"></h1>
+    <button class="nav" id="next" aria-label="下个月">›</button>
   </div>
+
+  <section class="cal" aria-label="本月色卡">
+    <div class="grid" id="grid"></div>
+    <div class="banner" id="exBanner" hidden>这是<strong>示例</strong>，让你先看看一个月会长成什么样。记下第一天后，这里就换成你自己的。</div>
+  </section>
+
+  <button class="cta" id="todayBtn"></button>
+  <p class="muted" style="text-align:center;margin-top:-8px">点任意一天可以补记或修改</p>
+
+  <section class="card" aria-labelledby="pTitle">
+    <h2 id="pTitle">月度画像</h2>
+    <div class="portrait" id="portrait"></div>
+    <p class="sum" id="sum"></p>
+    <p class="muted">记录只保存在你这台设备的浏览器里，别人看不到。想留存画像，截图即可。</p>
+    <button class="link" id="clear" hidden>清空我的全部记录</button>
+  </section>
 
   <details>
     <summary>为什么这样设计</summary>
@@ -138,6 +131,34 @@ summary{cursor:pointer;font-weight:700}
       <div><h3>反思层：看见自己</h3><p>单独一天的色卡意义不大，一个月的色卡排在一起，才会让人停下来想：我这个月过得怎么样？</p></div>
     </div>
   </details>
+  <p class="muted" id="storeNote" hidden>这个浏览器没法保存数据，记录只在本次打开期间有效。</p>
+</div>
+
+<button class="scrim" id="scrim" hidden aria-label="关闭"></button>
+<div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="recTitle">
+  <div class="sheet-in">
+    <div class="grip"></div>
+    <div class="now">
+      <svg viewBox="0 0 120 120" aria-hidden="true"><path id="bigBlob"></path></svg>
+      <div class="now-text">
+        <span class="muted" id="recTitle"></span>
+        <span class="word" id="word"></span>
+        <span class="muted" id="recState"></span>
+      </div>
+      <button class="close" id="close" aria-label="关闭">×</button>
+    </div>
+    <div>
+      <div class="pad" id="pad" tabindex="0" role="application" aria-label="情绪场：左右是愉快程度，上下是精力高低。可拖动，也可用方向键调整。">
+        <canvas id="field" width="64" height="64"></canvas>
+        <span class="lab tl">烦躁</span><span class="lab tr">兴奋</span>
+        <span class="lab bl">低落</span><span class="lab br">平静</span>
+        <span class="handle" id="handle"></span>
+      </div>
+      <div class="axes"><span>← 不愉快</span><span>上：有劲 · 下：没劲</span><span>愉快 →</span></div>
+    </div>
+    <button class="cta" id="save"></button>
+    <div class="rowlinks"><button class="link" id="del" hidden>删除这一天</button></div>
+  </div>
 </div>
 
 <script>
@@ -146,12 +167,10 @@ summary{cursor:pointer;font-weight:700}
 var $=function(id){return document.getElementById(id);};
 var KEY="moodcards.v1";
 
-/* ---------- 存储 ---------- */
 var store={},storeOK=true;
 try{var raw=localStorage.getItem(KEY);if(raw)store=JSON.parse(raw)||{};}catch(e){storeOK=false;}
 function persist(){try{localStorage.setItem(KEY,JSON.stringify(store));}catch(e){storeOK=false;}$("storeNote").hidden=storeOK;}
 
-/* ---------- 日期 ---------- */
 function pad2(n){return (n<10?"0":"")+n;}
 function keyOf(d){return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());}
 function parseKey(k){var p=k.split("-");return new Date(+p[0],+p[1]-1,+p[2]);}
@@ -159,7 +178,6 @@ var today=new Date();today=new Date(today.getFullYear(),today.getMonth(),today.g
 var todayKey=keyOf(today);
 var WD=["日","一","二","三","四","五","六"];
 
-/* ---------- 情绪 → 颜色 / 形状 / 词 ---------- */
 var ANCH=[[45,45],[135,-5],[225,-130],[315,-200],[405,-315]];
 function colorOf(v,a){
   var ang=Math.atan2(a,v)*180/Math.PI;if(ang<45)ang+=360;
@@ -192,7 +210,6 @@ function blobPath(cx,cy,R,a,seedStr){
   return d+"Z";
 }
 
-/* ---------- 情绪场底色 ---------- */
 (function(){
   var c=$("field"),ctx=c.getContext("2d"),N=64;
   for(var y=0;y<N;y++)for(var x=0;x<N;x++){
@@ -200,11 +217,9 @@ function blobPath(cx,cy,R,a,seedStr){
   }
 })();
 
-/* ---------- 状态 ---------- */
-var sel=todayKey,cur={v:0,a:0},dirty=false;
+var sel=todayKey,cur={v:0,a:0},dirty=false,open=false;
 var view={y:today.getFullYear(),m:today.getMonth()};
 function hasAny(){return Object.keys(store).length>0;}
-function loadSel(){var r=store[sel];cur=r?{v:r[0],a:r[1]}:{v:0,a:0};dirty=false;}
 
 function exampleMonth(){
   var out={},rnd=rng(20261111);
@@ -217,20 +232,27 @@ function exampleMonth(){
   return out;
 }
 
-/* ---------- 渲染：记录卡 ---------- */
+/* ---------- sheet ---------- */
+function openSheet(k){
+  sel=k;var r=store[sel];cur=r?{v:r[0],a:r[1]}:{v:0,a:0};dirty=false;open=true;
+  $("sheet").hidden=false;$("scrim").hidden=false;document.body.classList.add("locked");
+  renderRec();
+}
+function closeSheet(){open=false;$("sheet").hidden=true;$("scrim").hidden=true;document.body.classList.remove("locked");renderMonth();}
+
 function renderRec(){
   var d=parseKey(sel),isToday=sel===todayKey,rec=store[sel];
-  $("recTitle").textContent=(isToday?"今天 · ":"补记 · ")+(d.getMonth()+1)+"月"+d.getDate()+"日 周"+WD[d.getDay()];
+  $("recTitle").textContent=(isToday?"今天 · ":"")+(d.getMonth()+1)+"月"+d.getDate()+"日 周"+WD[d.getDay()];
   $("word").textContent=wordOf(cur.v,cur.a);
   var b=$("bigBlob");b.setAttribute("d",blobPath(60,60,42,cur.a,sel));b.setAttribute("fill",colorOf(cur.v,cur.a));
   var h=$("handle");h.style.left=((cur.v+1)/2*100)+"%";h.style.top=((1-cur.a)/2*100)+"%";
   var btn=$("save");
-  if(rec&&!dirty){btn.textContent="已记下 ✓";btn.className="btn done";$("recState").textContent="拖动可以修改";}
-  else{btn.textContent=rec?"更新这一天":(isToday?"记下今天":"记下这一天");btn.className="btn";$("recState").textContent=rec?"还没保存修改":"在下面的色块里拖一下";}
-  $("del").hidden=!rec;$("backToday").hidden=isToday;
+  if(rec&&!dirty){btn.textContent="已记下 ✓";btn.className="cta done";$("recState").textContent="拖动可以修改";}
+  else{btn.textContent=rec?"更新这一天":(isToday?"记下今天":"记下这一天");btn.className="cta";$("recState").textContent=rec?"还没保存修改":"在下面的色块里拖一下";}
+  $("del").hidden=!rec;
 }
 
-/* ---------- 渲染：月历与画像 ---------- */
+/* ---------- month ---------- */
 function renderMonth(){
   var first=new Date(view.y,view.m,1),days=new Date(view.y,view.m+1,0).getDate();
   var isCurMonth=view.y===today.getFullYear()&&view.m===today.getMonth();
@@ -243,11 +265,14 @@ function renderMonth(){
   var list=[];
   for(var d=1;d<=days;d++){
     var k=view.y+"-"+pad2(view.m+1)+"-"+pad2(d),r=data[k],future=parseKey(k)>today;
-    var inner=r?'<path d="'+blobPath(20,22,12,r[1],k)+'" fill="'+colorOf(r[0],r[1])+'"/>':'<circle cx="20" cy="22" r="2.5" fill="var(--line)"/>';
+    var inner=r?'<path d="'+blobPath(20,22,13,r[1],k)+'" fill="'+colorOf(r[0],r[1])+'"/>':'<circle cx="20" cy="22" r="2.5" fill="var(--line)"/>';
     if(r)list.push([k,r]);
-    html+='<button class="day'+(k===sel?" sel":"")+(k===todayKey?" today":"")+'" data-k="'+k+'" '+(future?"disabled":"")+' aria-label="'+(view.m+1)+"月"+d+"日"+(r?"，"+wordOf(r[0],r[1]):"，未记录")+'"><span class="n">'+d+'</span><svg viewBox="0 0 40 40" aria-hidden="true">'+inner+'</svg></button>';
+    html+='<button class="day'+(k===todayKey?" today":"")+(r?"":" empty")+'" data-k="'+k+'" '+(future?"disabled":"")+' aria-label="'+(view.m+1)+"月"+d+"日"+(r?"，"+wordOf(r[0],r[1]):"，未记录")+'"><span class="n">'+d+'</span><svg viewBox="0 0 40 40" aria-hidden="true">'+inner+'</svg></button>';
   }
   $("grid").innerHTML=html;
+
+  var tb=$("todayBtn"),tr=store[todayKey];
+  tb.textContent=tr?"今天：已记下 · "+wordOf(tr[0],tr[1]):"记下今天";tb.className=tr?"cta done":"cta";
 
   var s='<svg viewBox="0 0 300 300" role="img" aria-label="月度画像：每一天的色卡按情绪位置叠在一起">';
   s+='<line x1="150" y1="22" x2="150" y2="278" stroke="var(--line)"/><line x1="22" y1="150" x2="278" y2="150" stroke="var(--line)"/>';
@@ -263,7 +288,7 @@ function renderMonth(){
   sum.textContent=(useEx?"（示例）":"")+"这个月记了 "+list.length+" 天，最多的是「"+top+"」，有 "+q[top]+" 天。";
 }
 
-/* ---------- 交互 ---------- */
+/* ---------- events ---------- */
 var padEl=$("pad"),dragging=false;
 function setFromEvent(e){
   var rc=padEl.getBoundingClientRect();
@@ -281,26 +306,28 @@ padEl.addEventListener("keydown",function(e){
 $("save").addEventListener("click",function(){
   if(store[sel]&&!dirty)return;
   store[sel]=[cur.v,cur.a];dirty=false;persist();
-  var d=parseKey(sel);view={y:d.getFullYear(),m:d.getMonth()};
-  renderRec();renderMonth();
+  renderRec();
+  setTimeout(closeSheet,350);
 });
-$("del").addEventListener("click",function(){delete store[sel];persist();loadSel();renderRec();renderMonth();});
-$("backToday").addEventListener("click",function(){sel=todayKey;view={y:today.getFullYear(),m:today.getMonth()};loadSel();renderRec();renderMonth();});
+$("del").addEventListener("click",function(){delete store[sel];persist();closeSheet();});
+$("close").addEventListener("click",closeSheet);
+$("scrim").addEventListener("click",closeSheet);
+document.addEventListener("keydown",function(e){if(e.key==="Escape"&&open)closeSheet();});
+$("todayBtn").addEventListener("click",function(){view={y:today.getFullYear(),m:today.getMonth()};openSheet(todayKey);});
 $("grid").addEventListener("click",function(e){
   var b=e.target.closest(".day");if(!b||b.disabled)return;
-  sel=b.dataset.k;loadSel();renderRec();renderMonth();
-  if(window.matchMedia("(max-width:859px)").matches)padEl.scrollIntoView({block:"center",behavior:"smooth"});
+  openSheet(b.dataset.k);
 });
 $("prev").addEventListener("click",function(){view.m--;if(view.m<0){view.m=11;view.y--;}renderMonth();});
 $("next").addEventListener("click",function(){view.m++;if(view.m>11){view.m=0;view.y++;}renderMonth();});
 var clearArmed=false;
 $("clear").addEventListener("click",function(e){
   if(!clearArmed){clearArmed=true;e.currentTarget.textContent="再点一次确认清空，无法恢复";setTimeout(function(){clearArmed=false;$("clear").textContent="清空我的全部记录";},4000);return;}
-  clearArmed=false;e.currentTarget.textContent="清空我的全部记录";store={};persist();loadSel();renderRec();renderMonth();
+  clearArmed=false;e.currentTarget.textContent="清空我的全部记录";store={};persist();renderMonth();
 });
 
 $("storeNote").hidden=storeOK;
-loadSel();renderRec();renderMonth();
+renderMonth();
 })();
 </script>
 </body>
